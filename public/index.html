@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shower Thoughts</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">
+        <span class="logo-icon">💭</span>
+        <span class="logo-text">Shower Thoughts</span>
+      </div>
+      <div id="listen-status" class="listen-badge inactive">
+        <span class="dot"></span>
+        <span class="label">Initializing…</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="status-card" id="status-card">
+        <div class="status-icon" id="status-icon">🎙️</div>
+        <div class="status-info">
+          <div class="status-title" id="status-title">Say a command to begin</div>
+          <div class="status-sub" id="status-sub">Waiting for voice commands</div>
+        </div>
+        <div class="recording-timer" id="recording-timer" hidden>0:00</div>
+      </section>
+
+      <section class="commands-help">
+        <div class="command-pill"><kbd>"record thoughts"</kbd> General thought</div>
+        <div class="command-pill"><kbd>"record tasks"</kbd> To-do list</div>
+        <div class="command-pill"><kbd>"stop"</kbd> Stop &amp; process</div>
+        <div class="command-pill"><kbd>"delete"</kbd> Delete last</div>
+      </section>
+
+      <section class="recordings-section">
+        <h2 class="section-title">Recordings <span id="count-badge" class="count-badge">0</span></h2>
+        <div id="recordings-list" class="recordings-list">
+          <div class="empty-state">No recordings yet. Say <strong>"record thoughts"</strong> or <strong>"record tasks"</strong> to start.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(/usr/local/bin/npm install *)",
+      "Bash(/opt/homebrew/bin/npm install *)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//Users/saimchaudhary/.nvm/**)",
+      "Read(//Users/saimchaudhary/.nodenv/**)",
+      "Bash(command -v brew)",
+      "Bash(brew list *)",
+      "Bash(/opt/homebrew/bin/brew list *)",
+      "Bash(/opt/homebrew/bin/brew install *)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl *)",
+      "Bash(/opt/homebrew/bin/node -e ' *)",
+      "Bash(say -o /tmp/test_audio.aiff \"test\")",
+      "Read(//tmp/**)",
+      "Bash(RAILWAY_API_TOKEN=d1586ff0-d042-49bb-ae0a-144720fa0637 /opt/homebrew/bin/node_modules/.bin/railway whoami)",
+      "Bash(RAILWAY_API_TOKEN=d1586ff0-d042-49bb-ae0a-144720fa0637 railway whoami)",
+      "Read(//Users/saimchaudhary/.npm/bin/**)",
+      "Read(//opt/homebrew/lib/node_modules/.bin/**)",
+      "Read(//opt/homebrew/**)",
+      "Bash(RAILWAY_API_TOKEN=d1586ff0-d042-49bb-ae0a-144720fa0637 /opt/homebrew/bin/railway whoami)",
+      "Bash(RAILWAY_TOKEN=d1586ff0-d042-49bb-ae0a-144720fa0637 /opt/homebrew/bin/railway whoami)",
+      "Bash(gh auth *)"
+    ]
+  }
+}
