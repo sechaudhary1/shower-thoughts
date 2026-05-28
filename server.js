@@ -1,34 +1,21 @@
 const express = require('express');
 const multer = require('multer');
-const OpenAI = require('openai');
-const Anthropic = require('@anthropic-ai/sdk');
+const Groq = require('groq-sdk');
 require('dotenv').config();
 
 const app = express();
-// Use memory storage so no disk writes are needed (works on any cloud host)
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
 app.use(express.static('public'));
 
-// Groq is used for Whisper transcription (free tier)
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-});
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 app.post('/transcribe', upload.single('audio'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No audio file received' });
 
   try {
-    const { toFile } = require('openai');
-    const audioFile = await toFile(
-      req.file.buffer,
-      'recording.webm',
-      { type: 'audio/webm' }
-    );
     const transcription = await groq.audio.transcriptions.create({
-      file: audioFile,
+      file: new File([req.file.buffer], 'recording.webm', { type: 'audio/webm' }),
       model: 'whisper-large-v3-turbo',
       language: 'en',
     });
@@ -64,20 +51,18 @@ Return this exact JSON shape:
 Transcript: ${transcript}`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+      response_format: { type: 'json_object' },
     });
 
-    const text = message.content[0].text.trim();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      res.json(JSON.parse(jsonMatch[0]));
-    } else {
-      res.json(isTask ? { summary: text, tasks: [] } : { summary: text, keyPoints: [] });
-    }
+    const text = completion.choices[0].message.content.trim();
+    res.json(JSON.parse(text));
   } catch (error) {
     console.error('Processing error:', error.message);
     res.status(500).json({ error: error.message });
