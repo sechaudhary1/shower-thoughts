@@ -1,3 +1,29 @@
+// ── Auth guard ────────────────────────────────────────────────────────────────
+const authToken = localStorage.getItem('st_token');
+if (!authToken) {
+  window.location.href = '/login.html';
+  throw new Error('redirect'); // stop execution
+}
+
+const currentUser = JSON.parse(localStorage.getItem('st_user') || '{}');
+
+// Show user info in header
+if (currentUser.name) document.getElementById('user-name').textContent = currentUser.name;
+if (currentUser.avatar_url) {
+  const img = document.getElementById('user-avatar');
+  img.src = currentUser.avatar_url;
+  img.hidden = false;
+}
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('st_token');
+  localStorage.removeItem('st_user');
+  window.location.href = '/login.html';
+});
+
+function authHeaders() {
+  return { Authorization: `Bearer ${authToken}` };
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 const state = {
   recordings: [],        // { id, type, blobUrl, blob, timestamp, duration, transcript, processed }
@@ -201,10 +227,9 @@ class AudioRecorder {
 // ── API calls ─────────────────────────────────────────────────────────────────
 async function transcribeAudio(blob) {
   const form = new FormData();
-  // Whisper needs a filename with extension to detect format
   const ext = blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') ? 'mp4' : 'webm';
   form.append('audio', blob, `recording.${ext}`);
-  const res = await fetch('/transcribe', { method: 'POST', body: form });
+  const res = await fetch('/transcribe', { method: 'POST', headers: authHeaders(), body: form });
   if (!res.ok) throw new Error((await res.json()).error || 'Transcription failed');
   return (await res.json()).transcript;
 }
@@ -212,11 +237,21 @@ async function transcribeAudio(blob) {
 async function processTranscript(transcript, type) {
   const res = await fetch('/process', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ transcript, type }),
   });
   if (!res.ok) throw new Error((await res.json()).error || 'Processing failed');
   return res.json();
+}
+
+async function logRecording(data) {
+  try {
+    await fetch('/recordings/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(data),
+    });
+  } catch { /* non-critical */ }
 }
 
 // ── Recording card rendering ──────────────────────────────────────────────────
@@ -387,15 +422,37 @@ async function stopRecording() {
 
   showToast('⚙️ Transcribing…');
 
+  const processingStart = Date.now();
+  let hadError = false;
+  let errorMessage = null;
+  let wordCount = 0;
+  let numOutputs = 0;
+
   try {
     const transcript = await transcribeAudio(blob);
     rec.transcript = transcript;
+    wordCount = transcript.trim().split(/\s+/).filter(Boolean).length;
     const processed = await processTranscript(transcript, rec.type);
     rec.processed = processed;
+    numOutputs = processed.tasks?.length ?? processed.keyPoints?.length ?? 0;
   } catch (err) {
     console.error(err);
     rec.transcript = '⚠️ Processing failed: ' + err.message;
+    hadError = true;
+    errorMessage = err.message;
   }
+
+  const processingTime = Date.now() - processingStart;
+
+  logRecording({
+    type: rec.type,
+    duration_ms: duration,
+    transcript_word_count: wordCount || null,
+    num_outputs: numOutputs || null,
+    processing_time_ms: processingTime,
+    had_error: hadError,
+    error_message: errorMessage,
+  });
 
   rec.processing = false;
   renderRecordings();

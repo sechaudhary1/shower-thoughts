@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shower Thoughts – Sign In</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span>💭</span>
+        <span>Shower Thoughts</span>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Sign In</button>
+        <button class="auth-tab" data-tab="signup">Sign Up</button>
+      </div>
+
+      <div id="auth-error" class="auth-error" hidden></div>
+
+      <div id="google-btn-wrap" class="google-btn-wrap"></div>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <form id="auth-form">
+        <div id="name-field" class="form-field" hidden>
+          <label>Name</label>
+          <input type="text" id="input-name" placeholder="Your name" autocomplete="name" />
+        </div>
+        <div class="form-field">
+          <label>Email</label>
+          <input type="email" id="input-email" placeholder="you@example.com" required autocomplete="email" />
+        </div>
+        <div class="form-field">
+          <label>Password</label>
+          <input type="password" id="input-password" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-primary" id="submit-btn">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

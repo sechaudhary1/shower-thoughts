@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shower Thoughts – Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Login gate -->
+  <div id="admin-login-wrap" class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><span>💭</span><span>Admin Dashboard</span></div>
+      <div id="admin-login-error" class="auth-error" hidden></div>
+      <form id="admin-login-form">
+        <div class="form-field">
+          <label>Admin Password</label>
+          <input type="password" id="admin-password-input" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn-primary">Enter Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="app" hidden>
+    <header>
+      <div class="logo"><span class="logo-icon">💭</span><span class="logo-text">Admin Dashboard</span></div>
+      <button id="admin-logout" class="btn-ghost">Sign out</button>
+    </header>
+
+    <main>
+      <!-- Overview cards -->
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card"><div class="stat-value" id="s-total-users">–</div><div class="stat-label">Total Users</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-new-users">–</div><div class="stat-label">New (7d)</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-active-users">–</div><div class="stat-label">Active (7d)</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-total-recs">–</div><div class="stat-label">Total Recordings</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-recs-today">–</div><div class="stat-label">Recordings Today</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-avg-dur">–</div><div class="stat-label">Avg Duration (s)</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-avg-words">–</div><div class="stat-label">Avg Word Count</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-avg-outputs">–</div><div class="stat-label">Avg Outputs</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-error-rate">–</div><div class="stat-label">Error Rate</div></div>
+        <div class="stat-card"><div class="stat-value" id="s-avg-proc">–</div><div class="stat-label">Avg Processing (ms)</div></div>
+      </div>
+
+      <!-- Recording type breakdown -->
+      <section class="admin-section">
+        <h2 class="section-title">By Recording Type</h2>
+        <div id="type-breakdown" class="type-breakdown"></div>
+      </section>
+
+      <!-- Daily activity -->
+      <section class="admin-section">
+        <h2 class="section-title">Daily Activity (last 14 days)</h2>
+        <div id="daily-chart" class="daily-chart"></div>
+      </section>
+
+      <!-- Users table -->
+      <section class="admin-section">
+        <h2 class="section-title">Users <span id="user-count-badge" class="count-badge">0</span></h2>
+        <div class="table-wrap">
+          <table id="users-table" class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Signed Up</th>
+                <th>Last Active</th>
+                <th>Recordings</th>
+                <th>Thoughts / Tasks</th>
+                <th>Avg Duration (s)</th>
+                <th>Avg Words</th>
+                <th>Avg Outputs</th>
+                <th>Error Rate</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

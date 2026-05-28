@@ -3,10 +3,26 @@ const multer = require('multer');
 const Groq = require('groq-sdk');
 require('dotenv').config();
 
+const { init: initDb } = require('./db');
+const { requireAuth } = require('./middleware/auth');
+
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
 app.use(express.static('public'));
+
+// Routes
+app.use('/auth',       require('./routes/auth'));
+app.use('/recordings', require('./routes/recordings'));
+app.use('/admin/api',  require('./routes/admin'));
+
+// Debug: print env vars on startup (values masked for secrets)
+console.log('\n── Environment Variables ──');
+for (const [key, val] of Object.entries(process.env).sort()) {
+  const isSensitive = /key|secret|token|password|auth/i.test(key);
+  console.log(`  ${key}=${isSensitive ? (val?.slice(0, 6) + '…[masked]') : val}`);
+}
+console.log('───────────────────────────\n');
 
 let _groq;
 function getGroq() {
@@ -17,15 +33,7 @@ function getGroq() {
   return _groq;
 }
 
-// Debug: print all env vars on startup (values masked for secrets)
-console.log('\n── Environment Variables ──');
-for (const [key, val] of Object.entries(process.env).sort()) {
-  const isSensitive = /key|secret|token|password|auth/i.test(key);
-  console.log(`  ${key}=${isSensitive ? val?.slice(0, 6) + '…[masked]' : val}`);
-}
-console.log('───────────────────────────\n');
-
-app.post('/transcribe', upload.single('audio'), async (req, res) => {
+app.post('/transcribe', requireAuth, upload.single('audio'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No audio file received' });
 
   try {
@@ -41,7 +49,7 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
   }
 });
 
-app.post('/process', async (req, res) => {
+app.post('/process', requireAuth, async (req, res) => {
   const { transcript, type } = req.body;
   if (!transcript) return res.status(400).json({ error: 'No transcript provided' });
 
@@ -85,7 +93,14 @@ Transcript: ${transcript}`;
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\nShower Thoughts running at http://localhost:${PORT}`);
-  console.log('Open that URL in Chrome for voice command support.\n');
-});
+
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\nShower Thoughts running at http://localhost:${PORT}\n`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database:', err.message);
+    process.exit(1);
+  });
