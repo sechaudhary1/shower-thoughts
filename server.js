@@ -10,6 +10,14 @@ app.use(express.static('public'));
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// Debug: print all env vars on startup (values masked for secrets)
+console.log('\n── Environment Variables ──');
+for (const [key, val] of Object.entries(process.env).sort()) {
+  const isSensitive = /key|secret|token|password|auth/i.test(key);
+  console.log(`  ${key}=${isSensitive ? val?.slice(0, 6) + '…[masked]' : val}`);
+}
+console.log('───────────────────────────\n');
+
 app.post('/transcribe', upload.single('audio'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No audio file received' });
 
