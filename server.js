@@ -8,7 +8,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
 app.use(express.static('public'));
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+let _groq;
+function getGroq() {
+  if (!_groq) {
+    if (!process.env.GROQ_API_KEY) throw new Error('GROQ_API_KEY environment variable is not set');
+    _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return _groq;
+}
 
 // Debug: print all env vars on startup (values masked for secrets)
 console.log('\n── Environment Variables ──');
@@ -22,7 +29,7 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No audio file received' });
 
   try {
-    const transcription = await groq.audio.transcriptions.create({
+    const transcription = await getGroq().audio.transcriptions.create({
       file: new File([req.file.buffer], 'recording.webm', { type: 'audio/webm' }),
       model: 'whisper-large-v3-turbo',
       language: 'en',
@@ -59,7 +66,7 @@ Return this exact JSON shape:
 Transcript: ${transcript}`;
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
