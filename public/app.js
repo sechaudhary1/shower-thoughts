@@ -114,35 +114,39 @@ class VoiceCommander {
   }
 
   _detect(transcript) {
-    if (state.commandCooldown) return;
-
-    const isStart    = /\b(record|start)\b.*(thoughts?|general|mind|idea)/i.test(transcript)
+    const isStart  = !this._cd_start && (
+                       /\b(record|start)\b.*(thoughts?|general|mind|idea)/i.test(transcript)
                     || transcript.includes('record thoughts')
-                    || transcript.includes('start recording thoughts');
-    const isTask     = /\b(record|start)\b.*(task|todo|to-do|to do|list)/i.test(transcript)
+                    || transcript.includes('start recording thoughts'));
+    const isTask   = !this._cd_start && (
+                       /\b(record|start)\b.*(task|todo|to-do|to do|list)/i.test(transcript)
                     || transcript.includes('record tasks')
-                    || transcript.includes('start recording tasks');
-    const isStop     = /\b(stop|done|finish|end)\b/i.test(transcript);
-    const isDelete   = /\b(delete|erase|discard|remove)\b/i.test(transcript);
+                    || transcript.includes('start recording tasks'));
+    // Stop uses a separate cooldown so the start cooldown can't block it
+    const isStop   = !this._cd_stop && (
+                       /\bstop recording\b/i.test(transcript)
+                    || /^\s*stop\s*$/i.test(transcript)
+                    || /\bstop now\b/i.test(transcript));
+    const isDelete = !this._cd_start && /\b(delete|erase|discard|remove)\b/i.test(transcript);
 
     if (isStart && !state.isRecording) {
-      this._cooldown();
+      this._cooldown('start');
       this.onCommand('start-thoughts');
     } else if (isTask && !state.isRecording) {
-      this._cooldown();
+      this._cooldown('start');
       this.onCommand('start-tasks');
     } else if (isStop && state.isRecording) {
-      this._cooldown();
+      this._cooldown('stop');
       this.onCommand('stop');
     } else if (isDelete && !state.isRecording) {
-      this._cooldown();
+      this._cooldown('start');
       this.onCommand('delete');
     }
   }
 
-  _cooldown() {
-    state.commandCooldown = true;
-    setTimeout(() => { state.commandCooldown = false; }, 2000);
+  _cooldown(type) {
+    this[`_cd_${type}`] = true;
+    setTimeout(() => { this[`_cd_${type}`] = false; }, 2000);
   }
 
   start() {
@@ -343,7 +347,7 @@ async function startRecording(type) {
     setStatusCard(
       type === 'tasks' ? '📋' : '💭',
       type === 'tasks' ? 'Recording tasks…' : 'Recording thoughts…',
-      'Say "stop" when you\'re done',
+      'Say "stop recording" when you\'re done',
       'is-recording'
     );
     startTimer();
