@@ -7,7 +7,7 @@ require('dotenv').config();
 console.log('=== STARTUP ENV CHECK ===');
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? process.env.DATABASE_URL.slice(0, 30) + '…' : 'NOT SET ❌');
 console.log('GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'SET ✓' : 'NOT SET ❌');
-console.log('JWT_SECRET:',   process.env.JWT_SECRET   ? 'SET ✓' : 'NOT SET ❌');
+console.log('JWT_SECRET:',   process.env.JWT_SECRET   ? `"${process.env.JWT_SECRET.slice(0, 8)}…" (len=${process.env.JWT_SECRET.length})` : 'NOT SET ❌');
 console.log('=========================');
 
 const { init: initDb } = require('./db');
