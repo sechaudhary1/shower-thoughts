@@ -34,7 +34,7 @@ router.post('/signup', async (req, res) => {
   } catch (err) {
     if (err.code === '23505') return res.status(409).json({ error: 'Email already registered' });
     console.error('Signup error:', err.message);
-    res.status(500).json({ error: 'Sign up failed' });
+    res.status(500).json({ error: err.message }); // return real error for debugging
   }
 });
 
