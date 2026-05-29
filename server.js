@@ -3,6 +3,13 @@ const multer = require('multer');
 const Groq = require('groq-sdk');
 require('dotenv').config();
 
+// Explicit startup check — helps debug Railway env var injection
+console.log('=== STARTUP ENV CHECK ===');
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? process.env.DATABASE_URL.slice(0, 30) + '…' : 'NOT SET ❌');
+console.log('GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'SET ✓' : 'NOT SET ❌');
+console.log('JWT_SECRET:',   process.env.JWT_SECRET   ? 'SET ✓' : 'NOT SET ❌');
+console.log('=========================');
+
 const { init: initDb } = require('./db');
 const { requireAuth } = require('./middleware/auth');
 
