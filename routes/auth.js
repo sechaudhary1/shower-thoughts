@@ -7,9 +7,11 @@ const { getPool } = require('../db');
 const router = express.Router();
 
 function makeToken(user) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET is not set — add it to Railway Variables');
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name, avatar: user.avatar_url },
-    process.env.JWT_SECRET,
+    secret,
     { expiresIn: '30d' }
   );
 }
@@ -57,7 +59,7 @@ router.post('/login', async (req, res) => {
     res.json({ token: makeToken(user), user: { id: user.id, email: user.email, name: user.name, avatar_url: user.avatar_url } });
   } catch (err) {
     console.error('Login error:', err.message);
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json({ error: err.message });
   }
 });
 
