@@ -44,19 +44,23 @@ async function showDashboard() {
     const res = await fetch('/admin/api/stats', {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    if (res.status === 401) {
-      sessionStorage.removeItem('admin_token');
-      hide('dashboard');
-      show('admin-login-wrap');
+    const data = await res.json();
+    if (!res.ok) {
+      // Show error inside dashboard rather than silently bouncing back
+      document.querySelector('#stat-grid').innerHTML =
+        `<div style="color:var(--red);padding:20px;grid-column:1/-1">
+           Stats failed (${res.status}): ${data.error || 'Unknown error'}
+         </div>`;
       return;
     }
-    const { overview, byType, daily, users } = await res.json();
+    const { overview, byType, daily, users } = data;
     renderOverview(overview);
     renderByType(byType);
     renderDaily(daily);
     renderUsers(users);
   } catch (err) {
-    console.error(err);
+    document.querySelector('#stat-grid').innerHTML =
+      `<div style="color:var(--red);padding:20px;grid-column:1/-1">Error: ${err.message}</div>`;
   }
 }
 
