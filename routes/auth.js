@@ -91,13 +91,5 @@ router.post('/google', async (req, res) => {
   }
 });
 
-router.post('/admin-login', (req, res) => {
-  const { password } = req.body;
-  if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid admin password' });
-  }
-  const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '8h' });
-  res.json({ token });
-});
 
 module.exports = router;

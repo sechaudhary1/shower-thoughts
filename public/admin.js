@@ -1,4 +1,4 @@
-let adminToken = sessionStorage.getItem('admin_token');
+let adminPassword = sessionStorage.getItem('admin_password');
 
 function show(id) { document.getElementById(id).hidden = false; }
 function hide(id) { document.getElementById(id).hidden = true; }
@@ -12,15 +12,16 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
   errEl.hidden = true;
 
   try {
-    const res = await fetch('/auth/admin-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+    // Verify password works before storing it
+    const res = await fetch('/admin/api/stats', {
+      headers: { 'x-admin-password': password },
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Login failed');
-    adminToken = data.token;
-    sessionStorage.setItem('admin_token', adminToken);
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Invalid password');
+    }
+    adminPassword = password;
+    sessionStorage.setItem('admin_password', adminPassword);
     showDashboard();
   } catch (err) {
     errEl.textContent = err.message;
@@ -29,8 +30,8 @@ document.getElementById('admin-login-form').addEventListener('submit', async (e)
 });
 
 document.getElementById('admin-logout').addEventListener('click', () => {
-  sessionStorage.removeItem('admin_token');
-  adminToken = null;
+  sessionStorage.removeItem('admin_password');
+  adminPassword = null;
   hide('dashboard');
   show('admin-login-wrap');
 });
@@ -42,7 +43,7 @@ async function showDashboard() {
 
   try {
     const res = await fetch('/admin/api/stats', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { 'x-admin-password': adminPassword },
     });
     const data = await res.json();
     if (!res.ok) {
@@ -148,4 +149,4 @@ function esc(s) {
 }
 
 // Auto-show dashboard if token already in session
-if (adminToken) showDashboard();
+if (adminPassword) showDashboard();

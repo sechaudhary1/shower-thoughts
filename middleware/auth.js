@@ -12,15 +12,11 @@ function requireAuth(req, res, next) {
 }
 
 function requireAdmin(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Admin authentication required' });
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    if (payload.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
-    next();
-  } catch {
-    res.status(401).json({ error: 'Invalid or expired admin token' });
+  const password = req.headers['x-admin-password'];
+  if (!password || password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid admin password' });
   }
+  next();
 }
 
 module.exports = { requireAuth, requireAdmin };
