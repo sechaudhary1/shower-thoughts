@@ -1,3 +1,4 @@
+console.log('admin.js loaded');
 let adminPassword = sessionStorage.getItem('admin_password');
 
 function show(id) { document.getElementById(id).hidden = false; }
@@ -7,6 +8,7 @@ function set(id, val) { document.getElementById(id).textContent = val ?? '–'; 
 // ── Admin login ───────────────────────────────────────────────────────────────
 document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  console.log('form submitted');
   const password = document.getElementById('admin-password-input').value;
   const errEl = document.getElementById('admin-login-error');
   errEl.hidden = true;
