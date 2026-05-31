@@ -16,12 +16,13 @@ const { requireAuth } = require('./middleware/auth');
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(express.json());
-app.use(express.static('public'));
 
-// Routes
+// API routes before static so they take priority
 app.use('/auth',       require('./routes/auth'));
 app.use('/recordings', require('./routes/recordings'));
 app.use('/admin/api',  require('./routes/admin'));
+
+app.use(express.static('public'));
 
 // Debug: print env vars on startup (values masked for secrets)
 console.log('\n── Environment Variables ──');
