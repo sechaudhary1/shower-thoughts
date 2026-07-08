@@ -196,7 +196,7 @@ class AudioRecorder {
     this.stream = null;
   }
 
-  async start() {
+  async start(onSilence, silenceMs = 30000) {
     this.chunks = [];
     this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     this.mediaRecorder = new MediaRecorder(this.stream, { mimeType: this._mimeType() });
@@ -204,9 +204,59 @@ class AudioRecorder {
       if (e.data.size > 0) this.chunks.push(e.data);
     };
     this.mediaRecorder.start(250);
+    this._startSilenceDetection(onSilence, silenceMs);
+  }
+
+  _startSilenceDetection(onSilence, silenceMs) {
+    const ctx = new AudioContext();
+    const source = ctx.createMediaStreamSource(this.stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    let silenceSince = Date.now();
+    let countdown = null;
+
+    this._silenceCtx = ctx;
+    this._silenceInterval = setInterval(() => {
+      analyser.getByteFrequencyData(data);
+      const rms = Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length);
+
+      if (rms > 5) {
+        // Sound detected — reset silence clock and hide countdown
+        silenceSince = Date.now();
+        if (countdown !== null) {
+          els.statusSub.textContent = 'Say "stop recording" when you\'re done';
+          countdown = null;
+        }
+      } else {
+        const silentFor = Date.now() - silenceSince;
+        const remaining = Math.ceil((silenceMs - silentFor) / 1000);
+
+        if (silentFor >= silenceMs) {
+          this._stopSilenceDetection();
+          if (onSilence) onSilence();
+        } else if (silentFor > silenceMs - 10000) {
+          // Show countdown in last 10 seconds
+          countdown = remaining;
+          els.statusSub.textContent = `Stopping in ${remaining}s due to silence…`;
+        }
+      }
+    }, 500);
+  }
+
+  _stopSilenceDetection() {
+    clearInterval(this._silenceInterval);
+    this._silenceInterval = null;
+    if (this._silenceCtx) {
+      this._silenceCtx.close();
+      this._silenceCtx = null;
+    }
   }
 
   stop() {
+    this._stopSilenceDetection();
     return new Promise((resolve) => {
       this.mediaRecorder.onstop = () => {
         const mimeType = this._mimeType();
@@ -421,7 +471,10 @@ const recorder = new AudioRecorder();
 async function startRecording(type) {
   if (state.isRecording) return;
   try {
-    await recorder.start();
+    await recorder.start(() => {
+      showToast('🔇 Silence detected — stopping recording');
+      stopRecording();
+    });
     state.isRecording = true;
     state.recordingType = type;
     state.recordingStart = Date.now();
