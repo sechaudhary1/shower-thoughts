@@ -50,6 +50,20 @@ async function init() {
   await db.query(`CREATE INDEX IF NOT EXISTS idx_rl_user_id    ON recording_logs(user_id)`);
   await db.query(`CREATE INDEX IF NOT EXISTS idx_rl_created_at ON recording_logs(created_at)`);
 
+  await db.query(`
+    CREATE TABLE IF NOT EXISTS recordings (
+      id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type        TEXT NOT NULL CHECK (type IN ('thoughts', 'tasks')),
+      duration_ms INTEGER,
+      transcript  TEXT,
+      result      JSONB,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await db.query(`CREATE INDEX IF NOT EXISTS idx_rec_user_id ON recordings(user_id)`);
+
   console.log('Database ready');
 }
 

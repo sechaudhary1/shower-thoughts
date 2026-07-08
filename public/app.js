@@ -244,6 +244,49 @@ async function processTranscript(transcript, type) {
   return res.json();
 }
 
+async function saveRecording(data) {
+  try {
+    const res = await fetch('/recordings/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) return (await res.json()).id; // server-assigned UUID
+  } catch { /* non-critical */ }
+  return null;
+}
+
+async function deleteRecordingFromServer(id) {
+  try {
+    await fetch(`/recordings/${id}`, { method: 'DELETE', headers: authHeaders() });
+  } catch { /* non-critical */ }
+}
+
+async function loadRecordings() {
+  try {
+    const res = await fetch('/recordings', { headers: authHeaders() });
+    if (!res.ok) return;
+    const rows = await res.json();
+    // Map DB rows to the same shape the UI expects (no blob/blobUrl for persisted ones)
+    rows.forEach(row => {
+      state.recordings.push({
+        id: row.id,
+        type: row.type,
+        blobUrl: null,
+        duration: row.duration_ms,
+        timestamp: new Date(row.created_at),
+        processing: false,
+        transcript: row.transcript,
+        processed: row.result,
+        persisted: true,
+      });
+    });
+    renderRecordings();
+  } catch (err) {
+    console.error('Failed to load recordings:', err.message);
+  }
+}
+
 async function logRecording(data) {
   try {
     await fetch('/recordings/log', {
@@ -284,9 +327,7 @@ function buildCard(rec) {
       <span class="card-timestamp">${time}</span>
       <button class="card-delete-btn" data-id="${rec.id}" title="Delete recording">✕</button>
     </div>
-    <div class="card-audio">
-      <audio controls src="${rec.blobUrl}"></audio>
-    </div>
+    ${rec.blobUrl ? `<div class="card-audio"><audio controls src="${rec.blobUrl}"></audio></div>` : ''}
     <div class="card-body">
       ${rec.processing
         ? `<div class="card-processing"><div class="spinner"></div> Transcribing &amp; processing…</div>`
@@ -444,6 +485,18 @@ async function stopRecording() {
 
   const processingTime = Date.now() - processingStart;
 
+  // Save to DB and swap the temp id for the server UUID
+  if (!hadError) {
+    const serverId = await saveRecording({
+      type: rec.type,
+      duration_ms: duration,
+      transcript: rec.transcript,
+      result: rec.processed,
+    });
+    if (serverId) rec.id = serverId;
+    rec.persisted = true;
+  }
+
   logRecording({
     type: rec.type,
     duration_ms: duration,
@@ -463,7 +516,9 @@ async function stopRecording() {
 function deleteRecording(id) {
   const idx = state.recordings.findIndex(r => r.id === id);
   if (idx === -1) return;
-  URL.revokeObjectURL(state.recordings[idx].blobUrl);
+  const rec = state.recordings[idx];
+  if (rec.blobUrl) URL.revokeObjectURL(rec.blobUrl);
+  if (rec.persisted) deleteRecordingFromServer(id);
   state.recordings.splice(idx, 1);
   renderRecordings();
   updateCount();
@@ -491,4 +546,5 @@ function handleCommand(cmd) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 updateCount();
+loadRecordings();
 const commander = new VoiceCommander(handleCommand);
