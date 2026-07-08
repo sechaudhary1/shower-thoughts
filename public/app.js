@@ -115,7 +115,7 @@ class VoiceCommander {
   _bind() {
     this.recognition.onstart = () => {
       if (!state.isRecording) setListenStatus('listening');
-      setStatusCard('🎙️', 'Listening for commands', 'Say "record thoughts" or "record tasks" to begin');
+      setStatusCard('🎙️', 'Listening for commands', 'Say "shower thoughts" or "shower tasks" to begin');
     };
 
     this.recognition.onresult = (e) => {
@@ -141,11 +141,13 @@ class VoiceCommander {
 
   _detect(transcript) {
     const isStart  = !this._cd_start && (
-                       /\b(record|start)\b.*(thoughts?|general|mind|idea)/i.test(transcript)
+                       /\bshower thoughts?\b/i.test(transcript)
+                    || /\b(record|start)\b.*(thoughts?|general|mind|idea)/i.test(transcript)
                     || transcript.includes('record thoughts')
                     || transcript.includes('start recording thoughts'));
     const isTask   = !this._cd_start && (
-                       /\b(record|start)\b.*(task|todo|to-do|to do|list)/i.test(transcript)
+                       /\bshower tasks?\b/i.test(transcript)
+                    || /\b(record|start)\b.*(task|todo|to-do|to do|list)/i.test(transcript)
                     || transcript.includes('record tasks')
                     || transcript.includes('start recording tasks'));
     // Stop uses a separate cooldown so the start cooldown can't block it
@@ -514,7 +516,7 @@ async function stopRecording() {
   rec.processing = false;
   renderRecordings();
   showToast('✅ Done! Recording processed.');
-  setStatusCard('🎙️', 'Listening for commands', 'Say "record thoughts" or "record tasks" to begin');
+  setStatusCard('🎙️', 'Listening for commands', 'Say "shower thoughts" or "shower tasks" to begin');
 }
 
 function deleteRecording(id) {
