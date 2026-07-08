@@ -304,27 +304,31 @@ function renderRecordings() {
     return;
   }
   els.recordingsList.innerHTML = '';
-  // Show newest first
-  [...state.recordings].reverse().forEach(rec => {
-    els.recordingsList.appendChild(buildCard(rec));
+  // Show newest first, numbered oldest=1 to newest=N
+  const total = state.recordings.length;
+  [...state.recordings].reverse().forEach((rec, i) => {
+    els.recordingsList.appendChild(buildCard(rec, total - i));
   });
   updateCount();
 }
 
-function buildCard(rec) {
+function buildCard(rec, num) {
   const card = document.createElement('div');
   card.className = `recording-card${rec.processing ? ' processing' : ''}`;
   card.id = `card-${rec.id}`;
 
   const label = rec.type === 'tasks' ? 'Tasks' : 'Thoughts';
-  const time = new Date(rec.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const ts = new Date(rec.timestamp);
+  const date = ts.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  const time = ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const dur = rec.duration ? formatDuration(rec.duration) : '';
 
   card.innerHTML = `
     <div class="card-header">
+      <span class="card-number">#${num}</span>
       <span class="type-badge ${rec.type}">${label}</span>
       ${dur ? `<span class="card-duration">${dur}</span>` : ''}
-      <span class="card-timestamp">${time}</span>
+      <span class="card-timestamp">${date} · ${time}</span>
       <button class="card-delete-btn" data-id="${rec.id}" title="Delete recording">✕</button>
     </div>
     ${rec.blobUrl ? `<div class="card-audio"><audio controls src="${rec.blobUrl}"></audio></div>` : ''}
