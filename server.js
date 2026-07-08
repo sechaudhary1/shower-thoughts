@@ -10,6 +10,7 @@ console.log('GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'SET ✓' : 'NOT SET ❌
 console.log('JWT_SECRET:',   process.env.JWT_SECRET   ? `"${process.env.JWT_SECRET.slice(0, 8)}…" (len=${process.env.JWT_SECRET.length})` : 'NOT SET ❌');
 console.log('=========================');
 
+const { Resend } = require('resend');
 const { init: initDb } = require('./db');
 const { requireAuth } = require('./middleware/auth');
 
@@ -93,12 +94,64 @@ Transcript: ${transcript}`;
     });
 
     const text = completion.choices[0].message.content.trim();
-    res.json(JSON.parse(text));
+    const result = JSON.parse(text);
+    res.json(result);
+
+    // Send email non-blocking — don't fail the request if email fails
+    sendResultEmail(req.user.email, req.user.name, type, transcript, result).catch(
+      err => console.error('Email error:', err.message)
+    );
   } catch (error) {
     console.error('Processing error:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
+
+function sendResultEmail(email, name, type, transcript, result) {
+  if (!process.env.RESEND_API_KEY) return Promise.resolve();
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const isTask = type === 'tasks';
+  const title = isTask ? 'Your Tasks Recording' : 'Your Thoughts Recording';
+  const time = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+
+  const outputsHtml = isTask
+    ? (result.tasks?.length
+        ? `<ul style="margin:0;padding-left:20px;">${result.tasks.map(t => `<li style="margin-bottom:6px;">${t}</li>`).join('')}</ul>`
+        : '')
+    : (result.keyPoints?.length
+        ? `<ul style="margin:0;padding-left:20px;">${result.keyPoints.map(p => `<li style="margin-bottom:6px;">${p}</li>`).join('')}</ul>`
+        : '');
+
+  const outputsLabel = isTask ? 'To-Do List' : 'Key Points';
+
+  const html = `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a2e;">
+      <div style="background:#7c6af7;padding:24px 32px;border-radius:12px 12px 0 0;">
+        <h1 style="margin:0;color:white;font-size:22px;">💭 ${title}</h1>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">${time}</p>
+      </div>
+      <div style="background:#f8f8ff;padding:28px 32px;border-radius:0 0 12px 12px;border:1px solid #e8e8f0;border-top:none;">
+        <h2 style="margin:0 0 10px;font-size:15px;color:#7c6af7;text-transform:uppercase;letter-spacing:0.5px;">Summary</h2>
+        <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">${result.summary || ''}</p>
+
+        ${outputsHtml ? `
+        <h2 style="margin:0 0 10px;font-size:15px;color:#7c6af7;text-transform:uppercase;letter-spacing:0.5px;">${outputsLabel}</h2>
+        <div style="margin-bottom:24px;font-size:15px;line-height:1.6;">${outputsHtml}</div>
+        ` : ''}
+
+        <h2 style="margin:0 0 10px;font-size:15px;color:#7c6af7;text-transform:uppercase;letter-spacing:0.5px;">Transcript</h2>
+        <p style="margin:0;font-size:14px;line-height:1.6;color:#555;background:#fff;padding:14px 16px;border-radius:8px;border:1px solid #e0e0ee;">${transcript}</p>
+      </div>
+    </div>
+  `;
+
+  return resend.emails.send({
+    from: 'Shower Thoughts <onboarding@resend.dev>',
+    to: email,
+    subject: `💭 ${title} — ${time}`,
+    html,
+  });
+}
 
 const PORT = process.env.PORT || 3000;
 
